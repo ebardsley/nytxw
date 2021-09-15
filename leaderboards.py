@@ -34,11 +34,22 @@ def get_best_string(c):
     return s
   return None
 
+def time_in_seconds(t):
+  if isinstance(t, str):
+    if ':' in t:
+      ret = 0
+      parts = t.split(':')
+      for part in parts:
+        ret = ret * 60 + int(part)
+      return ret
+    return None
+  return t or None
+
 def format_message(data):
   scores = []
   for s in data['scores']:
-    if s['name'] and s['rank'] and s['time']:
-      scores.append((int(s['rank']), f'{s["name"]} {s["time"]}'))
+    if s.get('name') and s.get('time'):
+      scores.append((time_in_seconds(s['time']), f'{s["name"]} {s["time"]}'))
 
   if not scores:
     return None

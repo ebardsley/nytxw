@@ -6,6 +6,9 @@ import os
 import pprint
 import sys
 
+BLACKLIST = frozenset([
+  'JourHadiqueBot',
+])
 
 def time_in_seconds(t):
   if isinstance(t, str):
@@ -28,6 +31,8 @@ def process_file(filename, aggregated):
   date = str(data['date'])
   for score in data['scores']:
     name = score['name'].strip()
+    if name in BLACKLIST:
+      continue
     aggregated.setdefault(name, {})
     t = time_in_seconds(score['time'])
     if t:
