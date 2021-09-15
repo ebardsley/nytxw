@@ -57,7 +57,7 @@ def main(argv):
 
   data = parse_html(contents)
   pprint.pprint(data)
-  filename = time.strftime('nytxw-%Y%m%d%H%M.json')
+  filename = time.strftime('nytxw-%Y%m%d%H%M.pson')
   with open(filename, 'w') as f:
     f.write(pprint.pformat(data))
   print('Wrote', filename)
