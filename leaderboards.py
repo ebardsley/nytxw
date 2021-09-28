@@ -1,29 +1,24 @@
 #!/usr/bin/env pipenv-shebang
 
-import os
 import pprint
 import sys
 import time
 
 import dateparser
-import discord
 from bs4 import BeautifulSoup
 import requests
 
-def require_env(name):
-  v = os.getenv(name)
-  if not v:
-    print(f'environment variable {name} is not specified', file=sys.stderr)
-    sys.exit(1)
-  return v
+import botsay
+import env
+
 
 DATE_CLASS = 'lbd-type__date'
 SCORE_PREFIX = 'lbd-score__'
 LEADERBOARD_URL = 'https://www.nytimes.com/puzzles/leaderboards'
-COOKIES = {'NYT-S': require_env('NYTXW_COOKIE')}
-BOT_TOKEN = require_env('NYTXW_BOT')
+COOKIES = {'NYT-S': env.require_env('NYTXW_COOKIE')}
+BOT_TOKEN = env.require_env('NYTXW_BOT')
 CHANNEL_ID = [
-  885446213237866539,  # Bardsleys #general
+#  885446213237866539,  # Bardsleys #general
   804397490987466793,  # DSSN #puzzles
 ]
 
@@ -80,24 +75,7 @@ def main(argv):
     return
 
   print(message)
-  client = discord.Client()
-
-  @client.event
-  async def on_ready():
-    print('Logged into Discord as {0.user}'.format(client))
-    for channel_id in CHANNEL_ID:
-      channel = client.get_channel(channel_id)
-      print('Channel', channel.id if channel else None, channel)
-      if channel:
-        await channel.send(message)
-    await client.close()
-
-  @client.event
-  async def on_error(event):
-    await client.close()
-    raise
-
-  client.run(BOT_TOKEN)
+  botsay.say(BOT_TOKEN, CHANNEL_ID, message)
 
   return
 
