@@ -1,5 +1,6 @@
 #!/usr/bin/env pipenv-shebang
 
+import os
 import pprint
 import sys
 import time
@@ -63,7 +64,8 @@ def main(argv):
 
   data = parse_html(contents)
   pprint.pprint(data)
-  filename = time.strftime('nytxw-%Y%m%d%H%M.pson')
+  filename = time.strftime('data/%Y/nytxw-%Y%m%d%H%M.pson')
+  os.makedirs(os.path.dirname(filename), exist_ok=True)
   with open(filename, 'w') as f:
     f.write(pprint.pformat(data))
   print('Wrote', filename)

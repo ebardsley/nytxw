@@ -1,6 +1,7 @@
 #!/usr/bin/env pipenv-shebang
 
 import datetime
+import glob
 import json
 import os
 import pprint
@@ -50,8 +51,9 @@ def main(argv):
   output = argv[1]
   aggregated = {}
 
-  for path in argv[2:]:
-    process_file(path, aggregated)
+  for globspec in argv[2:]:
+    for path in glob.glob(globspec):
+      process_file(path, aggregated)
 
   with open(output, 'w') as f:
     json.dump(to_json(aggregated), f, indent=2)
