@@ -3,11 +3,7 @@
 import os
 import sys
 
-import env
 import discord
-
-
-BOT_TOKEN = env.require_env('NYTXW_BOT')
 
 
 def say(token, channels, message):
@@ -28,21 +24,33 @@ def say(token, channels, message):
     await client.close()
     raise
 
-  client.run(BOT_TOKEN)
+  client.run(token)
 
-  return
+
+def webhook(url, message):
+  hook = discord.SyncWebhook.from_url(url)
+  hook.send(
+    content=message,
+    # suppress_embeds=True,
+  )
 
 
 def main(argv):
   if len(argv) < 3:
-    print(f'usage: {argv[0]} <channel id> <message>', file=sys.stderr)
+    print(f'usage: {argv[0]} <channel id|webhook> <message>', file=sys.stderr)
     sys.exit(1)
 
-  channels = [int(argv[1])]
   message = ' '.join(argv[2:])
+  if argv[1].startswith('https:'):
+    print('Webhook:', message)
+    webhook(argv[1], message)
+  else:
+    import env
+    token = env.require_env('NYTXW_BOT')
+    channels = [int(argv[1])]
+    print('Message:', message)
+    say(token, channels, message)
 
-  print('Message:', message)
-  say(BOT_TOKEN, channels, message)
 
 
 if __name__ == '__main__':
