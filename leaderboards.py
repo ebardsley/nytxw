@@ -1,34 +1,24 @@
 #!/usr/bin/env pipenv-shebang
 
+import json
 import os
 import pprint
 import sys
 import time
 
-import dateparser
-from bs4 import BeautifulSoup
 import requests
 
 import botsay
 import env
 
 
-DATE_CLASS = 'lbd-type__date'
-SCORE_PREFIX = 'lbd-score__'
-LEADERBOARD_URL = 'https://www.nytimes.com/puzzles/leaderboards'
+LEADERBOARD_URL = 'https://www.nytimes.com/svc/crosswords/v6/leaderboard/mini.json'
 COOKIES = {'NYT-S': env.require_env('NYTXW_COOKIE')}
 BOT_TOKEN = env.require_env('NYTXW_BOT')
 CHANNEL_ID = [
 #  885446213237866539,  # Bardsleys #general
   804397490987466793,  # DSSN #puzzles
 ]
-
-def get_best_string(c):
-  if c.string is not None:
-    return c.string
-  for s in c.strings:
-    return s
-  return None
 
 def time_in_seconds(t):
   if isinstance(t, str):
@@ -41,11 +31,16 @@ def time_in_seconds(t):
     return None
   return t or None
 
+def time_in_minutes(t):
+  if not isinstance(t, str):
+    t = f'{t//60}:{t%60:02d}'
+  return t
+
 def format_message(data):
   scores = []
   for s in data['scores']:
     if s.get('name') and s.get('time'):
-      scores.append((time_in_seconds(s['time']), f'{s["name"]} {s["time"]}'))
+      scores.append((time_in_seconds(s['time']), f'{s["name"]} {time_in_minutes(s["time"])}'))
 
   if not scores:
     return None
@@ -62,7 +57,7 @@ def main(argv):
   response.raise_for_status()
   contents = response.text
 
-  data = parse_html(contents)
+  data = parse_json(contents)
   pprint.pprint(data)
   filename = time.strftime('data/%Y/nytxw-%Y%m%d%H%M.pson')
   os.makedirs(os.path.dirname(filename), exist_ok=True)
@@ -70,48 +65,29 @@ def main(argv):
     f.write(pprint.pformat(data))
   print('Wrote', filename)
 
-  # data = parse_html(open('test.txt').read())
   message = format_message(data)
   if not message:
     print('No scores, exiting')
     return
 
   print(message)
-  botsay.say(BOT_TOKEN, CHANNEL_ID, message)
+  if CHANNEL_ID:
+    botsay.say(BOT_TOKEN, CHANNEL_ID, message)
 
   return
 
-def parse_html(contents):
-  soup = BeautifulSoup(contents, features='html.parser')
-  items = soup.find_all('div', class_='lbd-board__items')
-  scores = []
-  for i in items:
-    for s in i.find_all(class_='lbd-score'):
-      score_dict = {}
-      for c in s.children:
-        class_ = c.get('class')
-        if class_ and SCORE_PREFIX in class_[0]:
-          value = get_best_string(c)
-          if value in ('*', '--'):
-            value = None
-          if value:
-            value = value.strip()
-          score_dict[class_[0].replace(SCORE_PREFIX, '')] = value
-      if score_dict:
-        scores.append(score_dict)
-
-  data = {
-    'date': None,
+def parse_json(contents):
+  j = json.loads(contents)
+  scores = [
+    {'name': d.get('name'),
+     'rank': d.get('rank'),
+     'time': d.get('score', {}).get('secondsSpentSolving'),
+    } for d in j.get('data', [])
+  ]
+  return {
+    'date': j.get('printDate'),
     'scores': scores,
   }
-
-  date = soup.find(class_=DATE_CLASS)
-  if date:
-    parsed = dateparser.parse(date.string)
-    if parsed:
-      data['date'] = parsed.date()
-
-  return data
 
 if __name__ == '__main__':
   main(sys.argv)

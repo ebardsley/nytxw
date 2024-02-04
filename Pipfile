@@ -4,10 +4,8 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-beautifulsoup4 = "*"
 requests = "*"
-"discord.py" = "*"
-dateparser = "*"
+"discord.py" = "==1.*"
 
 [dev-packages]
 
