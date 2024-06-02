@@ -15,10 +15,7 @@ import env
 LEADERBOARD_URL = 'https://www.nytimes.com/svc/crosswords/v6/leaderboard/mini.json'
 COOKIES = {'NYT-S': env.require_env('NYTXW_COOKIE')}
 BOT_TOKEN = env.require_env('NYTXW_BOT')
-CHANNEL_ID = [
-#  885446213237866539,  # Bardsleys #general
-  804397490987466793,  # DSSN #puzzles
-]
+CHANNEL_ID = [int(c) for c in env.require_env('NYTXW_CHANNELS').split(',') if c]
 
 def time_in_seconds(t):
   if isinstance(t, str):
