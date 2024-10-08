@@ -1,4 +1,3 @@
 .envrc
-nytxw-*.pson
-nytxw-combined.json
+/data/
 test.txt

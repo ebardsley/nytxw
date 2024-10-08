@@ -1,15 +1,17 @@
 #!/usr/bin/env pipenv-shebang
 
+import contextlib
 import datetime
 import glob
 import json
 import os
-import pprint
+import sqlite3
 import sys
 
 BLACKLIST = frozenset([
   'JourHadiqueBot',
 ])
+DB = os.getenv('NYTXW_SQLITE3', None)
 
 def time_in_seconds(t):
   if isinstance(t, str):
@@ -57,7 +59,31 @@ def main(argv):
 
   with open(output, 'w') as f:
     json.dump(to_json(aggregated), f, indent=2)
-  # pprint.pprint(to_json(aggregated))
+
+  if DB:
+    by_date_and_name = {}
+    for name, date_time_map in aggregated.items():
+      for date, time in date_time_map.items():
+        by_date_and_name.setdefault(date, {})
+        by_date_and_name[date][name] = time
+
+    with contextlib.closing(sqlite3.connect(DB)) as conn:
+      with contextlib.closing(conn.cursor()) as cursor:
+        for date in sorted(by_date_and_name):
+          for name in sorted(by_date_and_name[date]):
+            rows = cursor.execute(
+              'SELECT * FROM leaderboards WHERE date = ? AND name = ?',
+              (date, name),
+            ).fetchone()
+            if not rows:
+              cursor.execute(
+                'INSERT INTO leaderboards (date, name, time) VALUES (?, ?, ?)',
+                (date, name, by_date_and_name[date][name]),
+              )
+              print('INSERT', date, name, by_date_and_name[date][name]),
+      conn.commit()
+    print('Updated', DB)
+
 
 if __name__ == '__main__':
   main(sys.argv)

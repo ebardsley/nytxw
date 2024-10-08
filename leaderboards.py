@@ -1,10 +1,11 @@
 #!/usr/bin/env pipenv-shebang
 
+import contextlib
 import json
 import os
 import pprint
+import sqlite3
 import sys
-import time
 
 import requests
 
@@ -16,6 +17,7 @@ LEADERBOARD_URL = 'https://www.nytimes.com/svc/crosswords/v6/leaderboard/mini.js
 COOKIES = {'NYT-S': env.require_env('NYTXW_COOKIE')}
 BOT_TOKEN = env.require_env('NYTXW_BOT')
 CHANNEL_ID = [int(c) for c in os.getenv('NYTXW_CHANNELS', '').split(',') if c]
+DB = os.getenv('NYTXW_SQLITE3', 'data/mini.sqlite3')
 
 def time_in_seconds(t):
   if isinstance(t, str):
@@ -56,11 +58,21 @@ def main(argv):
 
   data = parse_json(contents)
   pprint.pprint(data)
-  filename = time.strftime('data/%Y/nytxw-%Y%m%d%H%M.pson')
-  os.makedirs(os.path.dirname(filename), exist_ok=True)
-  with open(filename, 'w') as f:
-    f.write(pprint.pformat(data))
-  print('Wrote', filename)
+
+  if DB:
+    # DB is:
+    #   CREATE TABLE leaderboards (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT, name TEXT, time INTEGER);
+    with contextlib.closing(sqlite3.connect(DB)) as conn:
+      with contextlib.closing(conn.cursor()) as cursor:
+        date = data['date']
+        for score in data['scores']:
+          if score['time']:
+            cursor.execute(
+              'INSERT INTO leaderboards (date, name, time) VALUES (?, ?, ?)',
+              (date, score['name'], score['time']),
+            )
+      conn.commit()
+    print('Updated', DB)
 
   message = format_message(data)
   if not message:
