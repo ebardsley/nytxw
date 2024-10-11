@@ -1,0 +1,42 @@
+---
+repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.4.0
+  hooks:
+  - id: fix-byte-order-marker
+  - id: check-case-conflict
+  - id: check-executables-have-shebangs
+  - id: debug-statements
+  - id: end-of-file-fixer
+  - id: trailing-whitespace
+  - id: mixed-line-ending
+
+- repo: https://github.com/pre-commit/mirrors-mypy
+  rev: v1.2.0
+  hooks:
+  - id: mypy
+    args: [--check-untyped-defs, --ignore-missing-imports, --scripts-are-modules, --explicit-package-bases]
+    additional_dependencies:
+    - types-aiofiles
+    - types-cachetools
+    - types-croniter
+    - types-python-dateutil
+    - types-requests
+    - types-pytz
+    - types-tzlocal
+
+- repo: https://github.com/asottile/pyupgrade
+  rev: v3.4.0
+  hooks:
+  - id: pyupgrade
+    args: [--py311-plus]
+
+- repo: https://github.com/asottile/reorder-python-imports
+  rev: v3.9.0
+  hooks:
+  - id: reorder-python-imports
+
+- repo: https://github.com/psf/black
+  rev: 23.3.0
+  hooks:
+  - id: black
