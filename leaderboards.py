@@ -36,24 +36,33 @@ def time_in_minutes(t):
     return t
 
 
-def format_message(data):
-    scores = []
-    for s in data["scores"]:
-        if s.get("name") and s.get("time"):
-            scores.append(
+def scores_for_date(cursor, date):
+    res = cursor.execute(
+        "SELECT name, time FROM leaderboards WHERE date = ? ORDER BY id", (date,)
+    )
+    # Uniqueify by name.
+    scores = {name: time for (name, time) in res.fetchall()}
+    return scores
+
+
+def format_message(date, scores):
+    times = []
+    for name, time in scores.items():
+        if name and time:
+            times.append(
                 (
-                    time_in_seconds(s["time"]),
-                    f'{s["name"]} {time_in_minutes(s["time"])}',
+                    time_in_seconds(time),
+                    f"{name} {time_in_minutes(time)}",
                 )
             )
 
-    if not scores:
+    if not times:
         return None
 
     message = ""
-    if data["date"]:
-        message = f'{data["date"]}: '
-    message += ", ".join(x[1] for x in sorted(scores))
+    if date:
+        message = f"{date}: "
+    message += ", ".join(x[1] for x in sorted(times))
 
     return message
 
@@ -66,25 +75,23 @@ def main(argv):
     data = parse_json(contents)
     pprint.pprint(data)
 
-    if DB:
-        # DB is:
-        #   CREATE TABLE leaderboards (id INTEGER PRIMARY KEY AUTOINCREMENT, date TEXT, name TEXT, time INTEGER);
-        with contextlib.closing(sqlite3.connect(DB)) as conn:
-            with contextlib.closing(conn.cursor()) as cursor:
-                date = data["date"]
-                for score in data["scores"]:
-                    if score["time"]:
-                        cursor.execute(
-                            "INSERT INTO leaderboards (date, name, time) VALUES (?, ?, ?)",
-                            (date, score["name"], score["time"]),
-                        )
+    with contextlib.closing(sqlite3.connect(DB)) as conn:
+        with contextlib.closing(conn.cursor()) as cursor:
+            date = data["date"]
+            seen = scores_for_date(cursor, date)
+            for score in data["scores"]:
+                if score["time"] and score["time"] != seen.get(score["name"]):
+                    cursor.execute(
+                        "INSERT INTO leaderboards (date, name, time) VALUES (?, ?, ?)",
+                        (date, score["name"], score["time"]),
+                    )
             conn.commit()
-        print("Updated", DB)
+            print("Updated", DB)
 
-    message = format_message(data)
-    if not message:
-        print("No scores, exiting")
-        return
+            message = format_message(date, scores_for_date(cursor, date))
+            if not message:
+                print("No scores, exiting")
+                return
 
     print(message)
     if CHANNEL_ID:

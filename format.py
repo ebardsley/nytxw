@@ -1,21 +1,35 @@
 #!/usr/bin/env pipenv-shebang
-
-import datetime
-import os
+import contextlib
+import sqlite3
 import sys
 
 import leaderboards
 
+
 def main(argv):
-  if len(argv) != 2:
-    print(f'usage: {argv[0]} <file>', file=sys.stderr)
-    sys.exit(1)
-    
-  with open(argv[1]) as f:
-    data = eval(f.read())
+    if len(argv) not in (2, 3):
+        print(f"usage: {argv[0]} <file> [<date>]", file=sys.stderr)
+        sys.exit(1)
 
-  print(leaderboards.format_message(data))
-  
+    with contextlib.closing(sqlite3.connect(argv[1])) as conn:
+        with contextlib.closing(conn.cursor()) as cursor:
+            if argv[2:]:
+                date = argv[2]
+            else:
+                res = cursor.execute(
+                    "SELECT date FROM leaderboards ORDER BY date DESC LIMIT 1"
+                )
+                row = res.fetchone()
+                if not row:
+                    return
+                (date,) = row
 
-if __name__ == '__main__':
-  main(sys.argv)
+            print(
+                leaderboards.format_message(
+                    date, leaderboards.scores_for_date(cursor, date)
+                )
+            )
+
+
+if __name__ == "__main__":
+    main(sys.argv)
