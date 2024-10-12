@@ -11,12 +11,14 @@ import discord
 async def rpc(endpoint, json):
     async with aiohttp.ClientSession() as session:
         try:
-            response = await session.post(endpoint, json=json)
+            async with session.post(endpoint, json=json) as response:
+                if not response.ok:
+                    print("failed:", await response.text())
         except aiohttp.ClientError as e:
             raise
 
         if not response.ok:
-            print("failed:", await response.text())
+            print("failed:", response.text)
 
 
 def discord_message(token, channels, message):
@@ -57,7 +59,7 @@ def main(argv):
     return say(argv[1], message)
 
 
-def say(target, message):
+def say(target, message, extra=None):
     if target.startswith("https:"):
         print("Webhook:", message)
         webhook(target, message)
@@ -65,6 +67,8 @@ def say(target, message):
     elif target.startswith("http:"):  # TODO: https-ify?
         parsed = urllib.parse.urlparse(target)
         json = dict(urllib.parse.parse_qsl(parsed.query), msg=message)
+        if extra:
+            json.update(extra)
         parsed = parsed._replace(query=None)
         endpoint = urllib.parse.urlunparse(parsed)
         print("RPC", endpoint, json)

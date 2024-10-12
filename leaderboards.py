@@ -4,8 +4,8 @@ import json
 import os
 import pprint
 import sqlite3
-import sys
 
+import click
 import requests
 
 import botsay
@@ -67,7 +67,41 @@ def format_message(date, scores):
     return message
 
 
-def main(argv):
+def send_reminders(cursor, date, today_scores):
+    res = cursor.execute("SELECT date FROM leaderboards ORDER BY date DESC LIMIT 2")
+    rows = res.fetchall()
+    if not rows or len(rows) != 2:
+        return
+    yesterday = rows[-1][0]
+
+    discord_userids = {
+        name.lower(): userid
+        for (name, userid) in cursor.execute(
+            "SELECT name, userid FROM remind_users"
+        ).fetchall()
+    }
+
+    yesterday_scores = scores_for_date(cursor, yesterday)
+    for name in yesterday_scores.keys():
+        discord_userid = discord_userids.get(name.lower())
+        if discord_userid and name not in today_scores:
+            botsay.say(
+                CHANNEL_ID.split("?")[0],  # xxx: don't have to drop channelid like this
+                f"Remember to do your mini crossword for {date}",
+                extra={"userid": discord_userid},
+            )
+
+
+@click.command()
+@click.option(
+    "--announce/--noannounce", default=False, help="Announce daily scores on discord"
+)
+@click.option(
+    "--remind/--noremind",
+    default=False,
+    help="Remind individual users to do the puzzle",
+)
+def main(announce, remind):
     response = requests.get(LEADERBOARD_URL, cookies=COOKIES)
     response.raise_for_status()
     contents = response.text
@@ -88,13 +122,17 @@ def main(argv):
             conn.commit()
             print("Updated", DB)
 
-            message = format_message(date, scores_for_date(cursor, date))
+            scores = scores_for_date(cursor, date)
+            message = format_message(date, scores)
             if not message:
                 print("No scores, exiting")
                 return
 
+            if remind:
+                send_reminders(cursor, date, scores)
+
     print(message)
-    if CHANNEL_ID:
+    if announce and CHANNEL_ID:
         botsay.say(CHANNEL_ID, message)
 
     return
@@ -117,4 +155,4 @@ def parse_json(contents):
 
 
 if __name__ == "__main__":
-    main(sys.argv)
+    main()
