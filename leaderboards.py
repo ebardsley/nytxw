@@ -86,9 +86,9 @@ def send_reminders(cursor, date, today_scores):
         discord_userid = discord_userids.get(name.lower())
         if discord_userid and name not in today_scores:
             botsay.say(
-                CHANNEL_ID.split("?")[0],  # xxx: don't have to drop channelid like this
-                f"Remember to do your mini crossword for {date}",
-                extra={"userid": discord_userid},
+                CHANNEL_ID,
+                f"Remember to do your NYT mini crossword for {date}",
+                extra={"userid": discord_userid, "channelid": 0},
             )
 
 
@@ -123,17 +123,14 @@ def main(announce, remind):
             print("Updated", DB)
 
             scores = scores_for_date(cursor, date)
-            message = format_message(date, scores)
-            if not message:
-                print("No scores, exiting")
-                return
 
             if remind:
                 send_reminders(cursor, date, scores)
 
-    print(message)
     if announce and CHANNEL_ID:
-        botsay.say(CHANNEL_ID, message)
+        message = format_message(date, scores)
+        if message:
+            botsay.say(CHANNEL_ID, message)
 
     return
 
