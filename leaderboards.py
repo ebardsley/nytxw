@@ -68,7 +68,9 @@ def format_message(date, scores):
 
 
 def send_reminders(cursor, date, today_scores):
-    res = cursor.execute("SELECT date FROM leaderboards ORDER BY date DESC LIMIT 2")
+    res = cursor.execute(
+        "SELECT DISTINCT date FROM leaderboards ORDER BY date DESC LIMIT 2"
+    )
     rows = res.fetchall()
     if not rows or len(rows) != 2:
         return
