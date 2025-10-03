@@ -6,24 +6,17 @@ repos:
   - id: fix-byte-order-marker
   - id: check-case-conflict
   - id: check-executables-have-shebangs
+  - id: check-yaml
   - id: debug-statements
   - id: end-of-file-fixer
   - id: trailing-whitespace
   - id: mixed-line-ending
 
-- repo: https://github.com/pre-commit/mirrors-mypy
-  rev: v1.2.0
+- repo: https://github.com/jumanjihouse/pre-commit-hook-yamlfmt
+  rev: 0.2.3
   hooks:
-  - id: mypy
-    args: [--check-untyped-defs, --ignore-missing-imports, --scripts-are-modules, --explicit-package-bases]
-    additional_dependencies:
-    - types-aiofiles
-    - types-cachetools
-    - types-croniter
-    - types-python-dateutil
-    - types-requests
-    - types-pytz
-    - types-tzlocal
+  - id: yamlfmt
+    args: [--mapping, '2', --sequence, '2', --offset, '0']
 
 - repo: https://github.com/asottile/pyupgrade
   rev: v3.4.0
@@ -40,3 +33,17 @@ repos:
   rev: 23.3.0
   hooks:
   - id: black
+
+- repo: local
+  hooks:
+  - id: pytest
+    name: pytest
+    entry: /usr/bin/env pipenv run python -m pytest
+    language: script
+    pass_filenames: false
+    always_run: true
+  - id: flake8
+    name: flake8
+    entry: flake8
+    language: system
+    types: [python]

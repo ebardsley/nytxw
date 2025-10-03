@@ -9,6 +9,7 @@ requests = "*"
 click = "*"
 dateparser = "*"
 pytest = "*"
+flake8 = "*"
 
 [dev-packages]
 

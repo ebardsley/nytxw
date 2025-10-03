@@ -1,6 +1,4 @@
 #!/usr/bin/env pipenv-shebang
-import asyncio
-import os
 import sys
 import urllib.parse
 
