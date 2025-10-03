@@ -1,6 +1,7 @@
 #!/usr/bin/env pipenv-shebang
 import contextlib
 import json
+import os
 import sqlite3
 import sys
 
@@ -28,6 +29,7 @@ def main(argv):
 
     with open(output, "w") as f:
         json.dump(to_json(aggregated), f, indent=2)
+        f.write(os.linesep)
 
 
 if __name__ == "__main__":
