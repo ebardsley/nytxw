@@ -1,4 +1,5 @@
 #!/usr/bin/env pipenv-shebang
+import asyncio
 import sys
 import urllib.parse
 
@@ -12,7 +13,7 @@ async def rpc(endpoint, json):
             async with session.post(endpoint, json=json) as response:
                 if not response.ok:
                     print("failed:", await response.text())
-        except aiohttp.ClientError as e:
+        except aiohttp.ClientError:
             raise
 
         if not response.ok:

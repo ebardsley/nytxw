@@ -32,7 +32,7 @@ def time_in_seconds(t):
 
 def time_in_minutes(t):
     if not isinstance(t, str):
-        t = f"{t//60}:{t%60:02d}"
+        t = f"{t // 60}:{t % 60:02d}"
     return t
 
 
