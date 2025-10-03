@@ -38,12 +38,12 @@ repos:
   hooks:
   - id: pytest
     name: pytest
-    entry: /usr/bin/env pipenv run python -m pytest
-    language: script
+    entry: pipenv run python -m pytest
+    language: system
     pass_filenames: false
     always_run: true
   - id: flake8
     name: flake8
-    entry: flake8
+    entry: pipenv run flake8
     language: system
     types: [python]
