@@ -20,7 +20,6 @@ BASE_URL = "https://www.nytimes.com/svc/crosswords"
 LIST_URL = (
     BASE_URL + "/v3/puzzles.json?publish_type=daily&date_start={start}&date_end={end}"
 )
-COOKIES = {"NYT-S": env.require_env("NYTXW_COOKIE")}
 DIR = pathlib.Path(sys.argv[0]).parent
 
 
@@ -72,6 +71,8 @@ def first_solved(cursor):
 @click.option("--open/--noopen", default=False, help="Open URL in browser")
 @click.option("--start", default=None, help="date to start on")
 def main(db, debug, open, start):
+    cookies = {"NYT-S": env.require_env("NYTXW_COOKIE")}
+
     with contextlib.closing(sqlite3.connect(db)) as conn:
         with contextlib.closing(conn.cursor()) as cursor:
             cursor.execute(
@@ -104,7 +105,7 @@ def main(db, debug, open, start):
 
                 print("Fetching", url)
 
-                response = requests.get(url, cookies=COOKIES)
+                response = requests.get(url, cookies=cookies)
                 response.raise_for_status()
                 contents = response.json()
                 if debug:

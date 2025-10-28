@@ -13,7 +13,6 @@ import env
 
 
 LEADERBOARD_URL = "https://www.nytimes.com/svc/crosswords/v6/leaderboard/mini.json"
-COOKIES = {"NYT-S": env.require_env("NYTXW_COOKIE")}
 CHANNEL_ID = os.getenv("NYTXW_CHANNELS", "")
 DB = os.getenv("NYTXW_SQLITE3", "data/mini.sqlite3")
 
@@ -104,7 +103,8 @@ def send_reminders(cursor, date, today_scores):
     help="Remind individual users to do the puzzle",
 )
 def main(announce, remind):
-    response = requests.get(LEADERBOARD_URL, cookies=COOKIES)
+    cookies = {"NYT-S": env.require_env("NYTXW_COOKIE")}
+    response = requests.get(LEADERBOARD_URL, cookies=cookies)
     response.raise_for_status()
     contents = response.text
 

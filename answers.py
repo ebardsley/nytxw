@@ -10,7 +10,6 @@ import env
 
 
 URL = "https://www.nytimes.com/svc/crosswords/v6/puzzle/daily/{date}.json"
-COOKIES = {"NYT-S": env.require_env("NYTXW_COOKIE")}
 
 
 def puzzle_to_string(puzzle):
@@ -32,6 +31,7 @@ def puzzle_to_string(puzzle):
 
 
 def main(argv):
+    cookies = {"NYT-S": env.require_env("NYTXW_COOKIE")}
     parsed_date = dateparser.parse(sys.argv[1])
     date = parsed_date.strftime("%Y-%m-%d")
     url = URL.format(date=date)
@@ -40,7 +40,7 @@ def main(argv):
     if os.path.exists(f"{date}.json"):
         contents = open(f"{date}.json").read()
     else:
-        response = requests.get(url, cookies=COOKIES)
+        response = requests.get(url, cookies=cookies)
         response.raise_for_status()
         contents = response.text
 
