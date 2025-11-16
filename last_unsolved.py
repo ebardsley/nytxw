@@ -21,6 +21,7 @@ LIST_URL = (
     BASE_URL + "/v3/puzzles.json?publish_type=daily&date_start={start}&date_end={end}"
 )
 DIR = pathlib.Path(sys.argv[0]).parent
+FIRST_PUZZLE = datetime.date(1993, 11, 21)
 
 
 def month_start_date(date: datetime.date) -> datetime.date:
@@ -69,8 +70,9 @@ def first_solved(cursor):
 )
 @click.option("--debug/--nodebug", default=False, help="Debug mode")
 @click.option("--open/--noopen", default=False, help="Open URL in browser")
+@click.option("--stats/--nostats", default=True, help="Show stats")
 @click.option("--start", default=None, help="date to start on")
-def main(db, debug, open, start):
+def main(db, debug, open, start, stats):
     cookies = {"NYT-S": env.require_env("NYTXW_COOKIE")}
 
     with contextlib.closing(sqlite3.connect(db)) as conn:
@@ -96,6 +98,16 @@ def main(db, debug, open, start):
             if not date:
                 date = datetime.date.today()
 
+            if stats:
+                num_solved = cursor.execute(
+                    "SELECT COUNT(*) FROM solved WHERE solved=1"
+                ).fetchone()[0]
+                total_puzzles = (datetime.date.today() - FIRST_PUZZLE).days + 1
+                print(
+                    f"Solved {num_solved}(ish) of {total_puzzles} puzzles since {FIRST_PUZZLE} ({100 * num_solved / total_puzzles:.2f}%)"
+                )
+                print()
+
         while True:
             with contextlib.closing(conn.cursor()) as cursor:
                 url = LIST_URL.format(
@@ -103,7 +115,8 @@ def main(db, debug, open, start):
                     end=month_end_date(date),
                 )
 
-                print("Fetching", url)
+                if debug:
+                    print(f"Fetching {url}", file=sys.stderr)
 
                 response = requests.get(url, cookies=cookies)
                 response.raise_for_status()
@@ -121,7 +134,6 @@ def main(db, debug, open, start):
 
                 last = last_unsolved(conn, min_date=month_start_date(date))
                 if last:
-                    print("UNSOLVED", last)
                     leaderboard = f"https://www.nytimes.com/crosswords/archive/daily/{last.year}/{last.month:02d}"
                     print(leaderboard)
                     game = f"https://www.nytimes.com/crosswords/game/daily/{last.year}/{last.month:02d}/{last.day:02d}"
