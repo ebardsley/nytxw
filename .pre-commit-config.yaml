@@ -1,7 +1,7 @@
 ---
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.4.0
+  rev: v6.0.0
   hooks:
   - id: fix-byte-order-marker
   - id: check-case-conflict
@@ -19,13 +19,13 @@ repos:
     args: [--mapping, '2', --sequence, '2', --offset, '0']
 
 - repo: https://github.com/asottile/pyupgrade
-  rev: v3.4.0
+  rev: v3.21.2
   hooks:
   - id: pyupgrade
     args: [--py311-plus]
 
 - repo: https://github.com/asottile/reorder-python-imports
-  rev: v3.9.0
+  rev: v3.16.0
   hooks:
   - id: reorder-python-imports
 
