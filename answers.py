@@ -5,9 +5,8 @@ import sys
 
 import click
 import dateparser
-import requests
 
-import env
+import cookie
 
 
 URL = "https://www.nytimes.com/svc/crosswords/v6/puzzle/{game}/{date}.json"
@@ -35,7 +34,6 @@ def puzzle_to_string(puzzle):
 @click.option("-m", "--mini", is_flag=True, default=False)
 @click.argument("date-arg", type=str)
 def main(date_arg, mini):
-    cookies = {"NYT-S": env.require_env("NYTXW_COOKIE")}
     parsed_date = dateparser.parse(sys.argv[1])
     date = parsed_date.strftime("%Y-%m-%d")
     url = URL.format(
@@ -47,7 +45,7 @@ def main(date_arg, mini):
     if os.path.exists(f"{date}.json"):
         contents = open(f"{date}.json").read()
     else:
-        response = requests.get(url, cookies=cookies)
+        response = cookie.get_with_cookie(url)
         response.raise_for_status()
         contents = response.text
 
