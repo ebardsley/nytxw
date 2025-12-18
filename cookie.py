@@ -72,7 +72,7 @@ def initialize(filename):
             cursor.execute(
                 """
       CREATE TABLE cookies (
-        id INTEGER PRpIMARY KEY AUTOINCREMENT,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         date TIMESTAMP,
         cookie TEXT,
         valid INTEGER
