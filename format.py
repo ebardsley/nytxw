@@ -3,6 +3,8 @@ import contextlib
 import sqlite3
 import sys
 
+import dateparser
+
 import leaderboards
 
 
@@ -14,7 +16,7 @@ def main(argv):
     with contextlib.closing(sqlite3.connect(argv[1])) as conn:
         with contextlib.closing(conn.cursor()) as cursor:
             if argv[2:]:
-                date = argv[2]
+                date = dateparser.parse(argv[2]).date().isoformat()
             else:
                 res = cursor.execute(
                     "SELECT date FROM leaderboards ORDER BY date DESC LIMIT 1"
