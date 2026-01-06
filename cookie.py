@@ -1,14 +1,16 @@
 #!/usr/bin/env pipenv-shebang
 import contextlib
 import datetime
-import os
 import sqlite3
 
 import click
 import requests
 
-DB = os.getenv("NYTXW_COOKIE_SQLITE3", "data/cookie.sqlite3")
+import env
 
+DB = env.getenv("NYTXW_COOKIE_SQLITE3", env.DIR / "data/cookie.sqlite3")
+
+sqlite3.register_adapter(datetime.date, lambda t: t.isoformat())
 sqlite3.register_adapter(datetime.datetime, lambda t: t.isoformat())
 
 
@@ -41,9 +43,8 @@ def get_cookie(login=True, filename=DB):
             if ret:
                 return ret[0], True
 
-            username, password = os.getenv("NYTXW_USERNAME", None), os.getenv(
-                "NYTXW_PASSWORD", None
-            )
+            username = env.getenv("NYTXW_USERNAME")
+            password = env.getenv("NYTXW_PASSWORD")
             if login and username and password:
                 cookie = login_get_cookie(username, password)
                 conn.execute(
@@ -93,7 +94,7 @@ def get_with_cookie(url):
         "client_id": "ios.crosswords",
     }
 
-    cookie, from_db = os.getenv("NYTXW_COOKIE", None), False
+    cookie, from_db = env.getenv("NYTXW_COOKIE"), False
     if not cookie:
         cookie, from_db = get_cookie()
 

@@ -1,7 +1,6 @@
 #!/usr/bin/env pipenv-shebang
 import contextlib
 import json
-import os
 import pprint
 import sqlite3
 
@@ -9,11 +8,10 @@ import click
 
 import botsay
 import cookie
+import env
 
 
 LEADERBOARD_URL = "https://www.nytimes.com/svc/crosswords/v6/leaderboard/mini.json"
-CHANNEL_ID = os.getenv("NYTXW_CHANNELS", "")
-DB = os.getenv("NYTXW_SQLITE3", "data/mini.sqlite3")
 
 
 def time_in_seconds(t):
@@ -65,7 +63,7 @@ def format_message(date, scores):
     return message
 
 
-def send_reminders(cursor, date, today_scores):
+def send_reminders(cursor, channel, date, today_scores):
     res = cursor.execute(
         "SELECT DISTINCT date FROM leaderboards ORDER BY date DESC LIMIT 2"
     )
@@ -86,22 +84,32 @@ def send_reminders(cursor, date, today_scores):
         discord_userid = discord_userids.get(name.lower())
         if discord_userid and name not in today_scores:
             botsay.say(
-                CHANNEL_ID,
+                channel,
                 f"Remember to do your NYT mini crossword for {date}",
                 extra={"userid": discord_userid, "channelid": 0},
             )
 
 
-@click.command()
+@click.command(context_settings={"show_default": True})
 @click.option(
     "--announce/--noannounce", default=False, help="Announce daily scores on discord"
+)
+@click.option(
+    "--channel",
+    default=env.getenv("NYTXW_CHANNELS", ""),
+    help="Channel to announce to (may be comma-separated)",
+)
+@click.option(
+    "--db",
+    default=env.getenv("NYTXW_SQLITE3", env.DIR / "data/mini.sqlite3"),
+    help="Path to mini sqlite3 DB",
 )
 @click.option(
     "--remind/--noremind",
     default=False,
     help="Remind individual users to do the puzzle",
 )
-def main(announce, remind):
+def main(announce, channel, db, remind):
     response = cookie.get_with_cookie(LEADERBOARD_URL)
     response.raise_for_status()
     contents = response.text
@@ -109,7 +117,7 @@ def main(announce, remind):
     data = parse_json(contents)
     pprint.pprint(data)
 
-    with contextlib.closing(sqlite3.connect(DB)) as conn:
+    with contextlib.closing(sqlite3.connect(db)) as conn:
         with contextlib.closing(conn.cursor()) as cursor:
             date = data["date"]
             seen = scores_for_date(cursor, date)
@@ -120,17 +128,17 @@ def main(announce, remind):
                         (date, score["name"], score["time"]),
                     )
             conn.commit()
-            print("Updated", DB)
+            print("Updated", db)
 
             scores = scores_for_date(cursor, date)
 
             if remind:
-                send_reminders(cursor, date, scores)
+                send_reminders(cursor, channel, date, scores)
 
-    if announce and CHANNEL_ID:
+    if announce and channel:
         message = format_message(date, scores)
         if message:
-            botsay.say(CHANNEL_ID, message)
+            botsay.say(channel, message)
 
     return
 
