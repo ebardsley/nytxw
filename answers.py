@@ -1,7 +1,6 @@
 #!/usr/bin/env pipenv-shebang
 import json
 import os
-import sys
 
 import click
 import dateparser
@@ -34,7 +33,10 @@ def puzzle_to_string(puzzle):
 @click.option("-m", "--mini", is_flag=True, default=False)
 @click.argument("date-arg", type=str)
 def main(date_arg, mini):
-    parsed_date = dateparser.parse(sys.argv[1])
+    parsed_date = dateparser.parse(date_arg)
+    if not parsed_date:
+        print(f"Could not parse {date_arg}")
+        return 1
     date = parsed_date.strftime("%Y-%m-%d")
     url = URL.format(
         date=date,
