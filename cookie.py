@@ -34,24 +34,23 @@ def login_get_cookie(username, password):
 
 
 def get_cookie(login=True, filename=DB):
-    with contextlib.closing(sqlite3.connect(filename)) as conn:
-        with conn:
-            res = conn.execute(
-                "SELECT cookie FROM cookies WHERE valid=? ORDER BY date DESC", (True,)
-            )
-            ret = res.fetchone()
-            if ret:
-                return ret[0], True
+    with contextlib.closing(sqlite3.connect(filename)) as db:
+        res = db.execute(
+            "SELECT cookie FROM cookies WHERE valid=? ORDER BY date DESC", (True,)
+        )
+        ret = res.fetchone()
+        if ret:
+            return ret[0], True
 
-            username = env.getenv("NYTXW_USERNAME")
-            password = env.getenv("NYTXW_PASSWORD")
-            if login and username and password:
-                cookie = login_get_cookie(username, password)
-                conn.execute(
-                    "INSERT INTO cookies (cookie, valid, date) VALUES(?, ?, ?)",
-                    (cookie, True, datetime.datetime.now()),
-                )
-                return cookie, False
+        username = env.getenv("NYTXW_USERNAME")
+        password = env.getenv("NYTXW_PASSWORD")
+        if login and username and password:
+            cookie = login_get_cookie(username, password)
+            db.execute(
+                "INSERT INTO cookies (cookie, valid, date) VALUES(?, ?, ?)",
+                (cookie, True, datetime.datetime.now()),
+            )
+            return cookie, False
 
     raise ValueError("no cookie")
 
@@ -68,24 +67,22 @@ def main(ctx):
 @main.command()
 @click.argument("filename", default=DB)
 def initialize(filename):
-    with contextlib.closing(sqlite3.connect(filename)) as conn:
-        with contextlib.closing(conn.cursor()) as cursor:
-            cursor.execute(
-                """
-      CREATE TABLE cookies (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        date TIMESTAMP,
-        cookie TEXT,
-        valid INTEGER
-      );
-      """
-            )
+    with contextlib.closing(sqlite3.connect(filename)) as db:
+        db.execute(
+            """
+            CREATE TABLE cookies (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                date TIMESTAMP,
+                cookie TEXT,
+                valid INTEGER
+            );
+        """
+        )
 
 
 def invalidate(cookie, filename=DB):
-    with contextlib.closing(sqlite3.connect(filename)) as conn:
-        with conn:
-            conn.execute("UPDATE cookies SET VALID=? WHERE cookie=?", (False, cookie))
+    with contextlib.closing(sqlite3.connect(filename)) as db:
+        db.execute("UPDATE cookies SET VALID=? WHERE cookie=?", (False, cookie))
 
 
 def get_with_cookie(url, headers=None):

@@ -11,7 +11,6 @@ import cookie
 import env
 import param
 
-
 # TODO: remove this after a suitable delay
 LEADERBOARD_URL = "https://www.nytimes.com/svc/crosswords/v6/leaderboard/mini.json"
 
@@ -38,8 +37,8 @@ def time_in_minutes(t):
     return t
 
 
-def scores_for_date(cursor, date):
-    res = cursor.execute(
+def scores_for_date(db, date):
+    res = db.execute(
         "SELECT name, time FROM leaderboards WHERE date = ? ORDER BY id", (date,)
     )
     # Uniqueify by name.
@@ -69,8 +68,8 @@ def format_message(date, scores):
     return message
 
 
-def send_reminders(cursor, channel, date, today_scores):
-    res = cursor.execute(
+def send_reminders(db, channel, date, today_scores):
+    res = db.execute(
         "SELECT DISTINCT date FROM leaderboards ORDER BY date DESC LIMIT 2"
     )
     rows = res.fetchall()
@@ -80,12 +79,12 @@ def send_reminders(cursor, channel, date, today_scores):
 
     discord_userids = {
         name.lower(): userid
-        for (name, userid) in cursor.execute(
+        for (name, userid) in db.execute(
             "SELECT name, userid FROM remind_users"
         ).fetchall()
     }
 
-    yesterday_scores = scores_for_date(cursor, yesterday)
+    yesterday_scores = scores_for_date(db, yesterday)
     for name in yesterday_scores.keys():
         discord_userid = discord_userids.get(name.lower())
         if discord_userid and name not in today_scores:
@@ -141,22 +140,21 @@ def main(announce, channel, date, db, remind):
     pprint.pprint(data)
 
     with contextlib.closing(sqlite3.connect(db)) as conn:
-        with contextlib.closing(conn.cursor()) as cursor:
-            date = data["date"]
-            seen = scores_for_date(cursor, date)
-            for score in data["scores"]:
-                if score["time"] and score["time"] != seen.get(score["name"]):
-                    cursor.execute(
-                        "INSERT INTO leaderboards (date, name, time) VALUES (?, ?, ?)",
-                        (date, score["name"], score["time"]),
-                    )
-            conn.commit()
-            print("Updated", db)
+        date = data["date"]
+        seen = scores_for_date(conn, date)
+        for score in data["scores"]:
+            if score["time"] and score["time"] != seen.get(score["name"]):
+                conn.execute(
+                    "INSERT INTO leaderboards (date, name, time) VALUES (?, ?, ?)",
+                    (date, score["name"], score["time"]),
+                )
+        conn.commit()
+        print("Updated", db)
 
-            scores = scores_for_date(cursor, date)
+        scores = scores_for_date(conn, date)
 
-            if remind:
-                send_reminders(cursor, channel, date, scores)
+        if remind:
+            send_reminders(conn, channel, date, scores)
 
     if announce and channel:
         message = format_message(date, scores)

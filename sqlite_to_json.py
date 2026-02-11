@@ -15,19 +15,16 @@ def to_json(aggregated):
 
 
 @click.command(context_settings={"show_default": True})
-@click.argument("db", type=click.Path(exists=True))
+@click.argument("filename", type=click.Path(exists=True))
 @click.argument("output", type=click.File("w"))
-def main(db, output):
+def main(filename, output):
     aggregated = {}
 
-    with contextlib.closing(sqlite3.connect(db)) as conn:
-        with contextlib.closing(conn.cursor()) as cursor:
-            res = cursor.execute(
-                "SELECT date, name, time FROM leaderboards ORDER BY id"
-            )
-            for date, name, time in res.fetchall():
-                aggregated.setdefault(name, {})
-                aggregated[name][date] = time
+    with contextlib.closing(sqlite3.connect(filename)) as db:
+        res = db.execute("SELECT date, name, time FROM leaderboards ORDER BY id")
+        for date, name, time in res.fetchall():
+            aggregated.setdefault(name, {})
+            aggregated[name][date] = time
 
     json.dump(to_json(aggregated), output, indent=2)
     output.write(os.linesep)
