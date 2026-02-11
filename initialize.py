@@ -1,21 +1,25 @@
-import contextlib
-import sqlite3
-import sys
+#!/usr/bin/env pipenv-shebang
+import click
 
-if len(sys.argv) != 2:
-    print(f"usage: {sys.argv[0]} <file>", file=sys.stderr)
-    sys.exit(1)
+import param
 
-with contextlib.closing(sqlite3.connect(sys.argv[1])) as db:
+
+@click.command(context_settings={"show_default": True})
+@click.argument("db", type=param.DB(exists=False))
+def main(db):
     db.execute(
         """
-        CREATE TABLE leaderboards (
+        CREATE TABLE IF NOT EXISTS leaderboards (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             date TEXT,
             name TEXT,
             time INTEGER,
             updated_ts INTEGER,
-            updated_by TEXT,
-        );
+            updated_by TEXT
+        )
     """
     )
+
+
+if __name__ == "__main__":
+    main()

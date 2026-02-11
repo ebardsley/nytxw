@@ -1,8 +1,6 @@
 #!/usr/bin/env pipenv-shebang
-import contextlib
 import json
 import pprint
-import sqlite3
 
 import click
 
@@ -95,6 +93,11 @@ def send_reminders(db, channel, date, today_scores):
             )
 
 
+def db_filename(db):
+    # Returns: [(seq, name, file_path), ...]
+    return db.execute("PRAGMA database_list").fetchone()[-1]
+
+
 @click.command(context_settings={"show_default": True})
 @click.option(
     "--announce/--noannounce", default=False, help="Announce daily scores on discord"
@@ -113,6 +116,7 @@ def send_reminders(db, channel, date, today_scores):
 )
 @click.option(
     "--db",
+    type=param.DB(),
     default=env.getenv("NYTXW_SQLITE3", env.DIR / "data/mini.sqlite3"),
     help="Path to mini sqlite3 DB",
 )
@@ -139,22 +143,21 @@ def main(announce, channel, date, db, remind):
         data["date"] = str(date)
     pprint.pprint(data)
 
-    with contextlib.closing(sqlite3.connect(db)) as conn:
-        date = data["date"]
-        seen = scores_for_date(conn, date)
-        for score in data["scores"]:
-            if score["time"] and score["time"] != seen.get(score["name"]):
-                conn.execute(
-                    "INSERT INTO leaderboards (date, name, time) VALUES (?, ?, ?)",
-                    (date, score["name"], score["time"]),
-                )
-        conn.commit()
-        print("Updated", db)
+    date = data["date"]
+    seen = scores_for_date(db, date)
+    for score in data["scores"]:
+        if score["time"] and score["time"] != seen.get(score["name"]):
+            db.execute(
+                "INSERT INTO leaderboards (date, name, time) VALUES (?, ?, ?)",
+                (date, score["name"], score["time"]),
+            )
+    db.commit()
+    print("Updated", db_filename(db))
 
-        scores = scores_for_date(conn, date)
+    scores = scores_for_date(db, date)
 
-        if remind:
-            send_reminders(conn, channel, date, scores)
+    if remind:
+        send_reminders(db, channel, date, scores)
 
     if announce and channel:
         message = format_message(date, scores)

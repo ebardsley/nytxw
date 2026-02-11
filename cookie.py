@@ -7,11 +7,9 @@ import click
 import requests
 
 import env
+import param
 
 DB = env.getenv("NYTXW_COOKIE_SQLITE3", env.DIR / "data/cookie.sqlite3")
-
-sqlite3.register_adapter(datetime.date, lambda t: t.isoformat())
-sqlite3.register_adapter(datetime.datetime, lambda t: t.isoformat())
 
 
 def login_get_cookie(username, password):
@@ -65,19 +63,18 @@ def main(ctx):
 
 
 @main.command()
-@click.argument("filename", default=DB)
-def initialize(filename):
-    with contextlib.closing(sqlite3.connect(filename)) as db:
-        db.execute(
-            """
-            CREATE TABLE cookies (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                date TIMESTAMP,
-                cookie TEXT,
-                valid INTEGER
-            );
+@click.argument("db", type=param.DB(exists=False), default=DB)
+def initialize(db):
+    db.execute(
         """
-        )
+        CREATE TABLE IF NOT EXISTS cookies (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            date TIMESTAMP,
+            cookie TEXT,
+            valid INTEGER
+        );
+    """
+    )
 
 
 def invalidate(cookie, filename=DB):

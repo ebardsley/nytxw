@@ -1,10 +1,8 @@
 #!/usr/bin/env pipenv-shebang
 import collections
-import contextlib
 import datetime
 import os
 import pprint
-import sqlite3
 import sys
 import time
 
@@ -22,8 +20,6 @@ LIST_URL = (
     BASE_URL + "/v3/puzzles.json?publish_type=daily&date_start={start}&date_end={end}"
 )
 FIRST_PUZZLE = datetime.date(1993, 11, 21)
-
-sqlite3.register_adapter(datetime.date, lambda t: t.isoformat())
 
 
 def month_start_date(date: datetime.date) -> datetime.date:
@@ -80,7 +76,8 @@ def first_solved(db):
 
 @click.command(context_settings={"show_default": True})
 @click.option(
-    "--filename",
+    "--db",
+    type=param.DB(),
     default=env.DIR / "data/unsolved.sqlite3",
     help="Path to unsolved sqlite3 DB",
 )
@@ -91,91 +88,90 @@ def first_solved(db):
     "--summary/--nosummary", default=False, help="Show even more stats, summary by year"
 )
 @click.option("--start", type=param.Date(), default=None, help="date to start on")
-def main(filename, debug, open, start, stats, summary):
-    with contextlib.closing(sqlite3.connect(filename)) as db:
-        db.execute(
-            "CREATE TABLE IF NOT EXISTS solved "
-            "(id INTEGER PRIMARY KEY AUTOINCREMENT, date STRING, solved INTEGER)"
-        )
-        db.execute("CREATE UNIQUE INDEX IF NOT EXISTS date_index ON solved(date)")
-        db.commit()
+def main(db, debug, open, start, stats, summary):
+    db.execute(
+        "CREATE TABLE IF NOT EXISTS solved "
+        "(id INTEGER PRIMARY KEY AUTOINCREMENT, date STRING, solved INTEGER)"
+    )
+    db.execute("CREATE UNIQUE INDEX IF NOT EXISTS date_index ON solved(date)")
+    db.commit()
 
-        date = None
-        if start:
-            date = start
-        if not date:
-            date = last_unsolved(db)
-        if not date:
-            date = first_solved(db)
-            if date:
-                date = date - datetime.timedelta(days=1)
-        if not date:
-            date = datetime.date.today()
+    date = None
+    if start:
+        date = start
+    if not date:
+        date = last_unsolved(db)
+    if not date:
+        date = first_solved(db)
+        if date:
+            date = date - datetime.timedelta(days=1)
+    if not date:
+        date = datetime.date.today()
 
-        while True:
-            solvable_days = month_solvable_days(date)
-            solved_days = month_solved_count(db, date)
-            should_refresh_month = solved_days < solvable_days
+    while True:
+        solvable_days = month_solvable_days(date)
+        solved_days = month_solved_count(db, date)
+        should_refresh_month = solved_days < solvable_days
 
-            if debug:
-                print(
-                    f"{date}: solved {solved_days} of {solvable_days}, {should_refresh_month=}"
-                )
-
-            if should_refresh_month:
-                url = LIST_URL.format(
-                    start=month_start_date(date),
-                    end=month_end_date(date),
-                )
-
-                if debug:
-                    print(f"Fetching {url}", file=sys.stderr)
-
-                response = cookie.get_with_cookie(url)
-                response.raise_for_status()
-                contents = response.json()
-                if debug:
-                    pprint.pprint(contents)
-
-                for result in contents["results"]:
-                    db.execute(
-                        "INSERT INTO solved (date, solved) VALUES (?, ?) "
-                        "ON CONFLICT(date) DO UPDATE SET solved = excluded.solved;",
-                        (result["print_date"], result["solved"]),
-                    )
-                db.commit()
-
-            last = last_unsolved(db, min_date=month_start_date(date))
-            if last:
-                leaderboard = f"https://www.nytimes.com/crosswords/archive/daily/{last.year}/{last.month:02d}"
-                print(leaderboard)
-                game = f"https://www.nytimes.com/crosswords/game/daily/{last.year}/{last.month:02d}/{last.day:02d}"
-                print(game)
-                if open:
-                    os.system(f"open {game}")
-                break
-
-            date = date - dateutil.relativedelta.relativedelta(months=1)
-            if should_refresh_month:
-                time.sleep(0.5)
-
-        if stats:
-            num_solved = db.execute(
-                "SELECT COUNT(*) FROM solved WHERE solved=1"
-            ).fetchone()[0]
-            total_puzzles = (datetime.date.today() - FIRST_PUZZLE).days + 1
-            print()
+        if debug:
             print(
-                f"Solved {num_solved}(ish) of {total_puzzles} puzzles since {FIRST_PUZZLE} "
-                f"({100 * num_solved / total_puzzles:.2f}%)"
+                f"{date}: solved {solved_days} of {solvable_days}, {should_refresh_month=}"
             )
 
-        if summary:
-            by_year = collections.defaultdict(int)
-            for r in db.execute("SELECT date FROM solved WHERE solved=1"):
-                by_year[r[0][0:4]] += 1
-            print()
-            print(", ".join(f"{y}: {c}" for y, c in reversed(sorted(by_year.items()))))
+        if should_refresh_month:
+            url = LIST_URL.format(
+                start=month_start_date(date),
+                end=month_end_date(date),
+            )
+
+            if debug:
+                print(f"Fetching {url}", file=sys.stderr)
+
+            response = cookie.get_with_cookie(url)
+            response.raise_for_status()
+            contents = response.json()
+            if debug:
+                pprint.pprint(contents)
+
+            for result in contents["results"]:
+                db.execute(
+                    "INSERT INTO solved (date, solved) VALUES (?, ?) "
+                    "ON CONFLICT(date) DO UPDATE SET solved = excluded.solved;",
+                    (result["print_date"], result["solved"]),
+                )
+            db.commit()
+
+        last = last_unsolved(db, min_date=month_start_date(date))
+        if last:
+            leaderboard = f"https://www.nytimes.com/crosswords/archive/daily/{last.year}/{last.month:02d}"
+            print(leaderboard)
+            game = f"https://www.nytimes.com/crosswords/game/daily/{last.year}/{last.month:02d}/{last.day:02d}"
+            print(game)
+            if open:
+                os.system(f"open {game}")
+            break
+
+        date = date - dateutil.relativedelta.relativedelta(months=1)
+        if should_refresh_month:
+            time.sleep(0.5)
+
+    if stats:
+        num_solved = db.execute(
+            "SELECT COUNT(*) FROM solved WHERE solved=1"
+        ).fetchone()[0]
+        total_puzzles = (datetime.date.today() - FIRST_PUZZLE).days + 1
+        print()
+        print(
+            f"Solved {num_solved}(ish) of {total_puzzles} puzzles since {FIRST_PUZZLE} "
+            f"({100 * num_solved / total_puzzles:.2f}%)"
+        )
+
+    if summary:
+        by_year = collections.defaultdict(int)
+        for r in db.execute("SELECT date FROM solved WHERE solved=1"):
+            by_year[r[0][0:4]] += 1
+        print()
+        print(", ".join(f"{y}: {c}" for y, c in reversed(sorted(by_year.items()))))
 
 
 if __name__ == "__main__":
