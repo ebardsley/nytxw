@@ -58,3 +58,14 @@ def test_parse_json_and_format():
         )
         == "2025-10-03: spags 0:18, Bardsleys 0:26, shaggy 0:31"
     )
+
+
+def test_parse_graphql_and_format():
+    data = open("testdata/graphql-userdetails.json").read()
+    parsed = leaderboards.parse_graphql_json(data)
+    assert (
+        leaderboards.format_message(
+            parsed["date"], {s["name"]: s["time"] for s in parsed["scores"]}
+        )
+        == "spags 0:23, shaggy 0:36"
+    )

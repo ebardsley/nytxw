@@ -88,11 +88,12 @@ def invalidate(cookie, filename=DB):
             conn.execute("UPDATE cookies SET VALID=? WHERE cookie=?", (False, cookie))
 
 
-def get_with_cookie(url):
-    headers = {
-        "User-Agent": "Crosswords/20191213190708 CFNetwork/1128.0.1 Darwin/19.6.0",
-        "client_id": "ios.crosswords",
-    }
+def get_with_cookie(url, headers=None):
+    if headers is None:
+        headers = {
+            "User-Agent": "Crosswords/20191213190708 CFNetwork/1128.0.1 Darwin/19.6.0",
+            "client_id": "ios.crosswords",
+        }
 
     cookie, from_db = env.getenv("NYTXW_COOKIE"), False
     if not cookie:
