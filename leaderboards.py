@@ -1,5 +1,6 @@
 #!/usr/bin/env pipenv-shebang
 import json
+import math
 import pprint
 
 import click
@@ -194,6 +195,7 @@ def parse_graphql_json(contents):
         }
         for e in edges
     ]
+    scores.sort(key=lambda i: (float(i["time"] or math.inf), i["name"]))
     return {
         "date": None,
         "scores": scores,
