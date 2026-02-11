@@ -1,23 +1,20 @@
 #!/usr/bin/env pipenv-shebang
 import contextlib
 import sqlite3
-import sys
 
-import dateparser
+import click
 
 import leaderboards
+import param
 
 
-def main(argv):
-    if len(argv) not in (2, 3):
-        print(f"usage: {argv[0]} <file> [<date>]", file=sys.stderr)
-        sys.exit(1)
-
-    with contextlib.closing(sqlite3.connect(argv[1])) as conn:
+@click.command(context_settings={"show_default": True})
+@click.argument("file", type=click.Path(), required=True)
+@click.argument("date", type=param.Date(), default=None)
+def main(file, date):
+    with contextlib.closing(sqlite3.connect(file)) as conn:
         with contextlib.closing(conn.cursor()) as cursor:
-            if argv[2:]:
-                date = dateparser.parse(argv[2]).date().isoformat()
-            else:
+            if not date:
                 res = cursor.execute(
                     "SELECT date FROM leaderboards ORDER BY date DESC LIMIT 1"
                 )
@@ -34,4 +31,4 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    main(sys.argv)
+    main()

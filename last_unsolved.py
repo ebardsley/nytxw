@@ -14,6 +14,7 @@ import dateutil
 
 import cookie
 import env
+import param
 
 
 BASE_URL = "https://www.nytimes.com/svc/crosswords"
@@ -89,7 +90,7 @@ def first_solved(cursor):
 @click.option(
     "--summary/--nosummary", default=False, help="Show even more stats, summary by year"
 )
-@click.option("--start", default=None, help="date to start on")
+@click.option("--start", type=param.Date(), default=None, help="date to start on")
 def main(db, debug, open, start, stats, summary):
     with contextlib.closing(sqlite3.connect(db)) as conn:
         with contextlib.closing(conn.cursor()) as cursor:
@@ -104,7 +105,7 @@ def main(db, debug, open, start, stats, summary):
 
             date = None
             if start:
-                date = dateparser.parse(start).date()
+                date = start
             if not date:
                 date = last_unsolved(conn)
             if not date:

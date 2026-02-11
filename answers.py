@@ -3,9 +3,9 @@ import json
 import os
 
 import click
-import dateparser
 
 import cookie
+import param
 
 
 URL = "https://www.nytimes.com/svc/crosswords/v6/puzzle/{game}/{date}.json"
@@ -31,13 +31,8 @@ def puzzle_to_string(puzzle):
 
 @click.command(context_settings={"show_default": True})
 @click.option("-m", "--mini", is_flag=True, default=False)
-@click.argument("date-arg", type=str)
-def main(date_arg, mini):
-    parsed_date = dateparser.parse(date_arg)
-    if not parsed_date:
-        print(f"Could not parse {date_arg}")
-        return 1
-    date = parsed_date.strftime("%Y-%m-%d")
+@click.argument("date", type=param.Date(), default="today")
+def main(date, mini):
     url = URL.format(
         date=date,
         game="mini" if mini else "daily",

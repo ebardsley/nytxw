@@ -1,16 +1,15 @@
 #!/usr/bin/env pipenv-shebang
 import contextlib
-import datetime
 import json
 import pprint
 import sqlite3
 
 import click
-import dateparser
 
 import botsay
 import cookie
 import env
+import param
 
 
 # TODO: remove this after a suitable delay
@@ -109,7 +108,8 @@ def send_reminders(cursor, channel, date, today_scores):
 @click.option(
     "-d",
     "--date",
-    default=None,
+    type=param.Date(),
+    default="today",
     help="Date of leaderboard to get",
 )
 @click.option(
@@ -130,10 +130,6 @@ def main(announce, channel, date, db, remind):
         "nyt-app-version": "1.0.0",
         "nyt-token": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAiKjdfob/ixNCvLETwnQ3AalkGSm9NX4gcRbOudrtHmBmIJbWb8Xgu3QH516Edr1qD7A+w+5d0p/WsNCpWDLrqfjTIwMft+jtOQG44l7akD9yi9Gaq/6hS3cuntkY25AYR3WtQPqrtxClX+qQdhMmzlA0sRAXKM8dSbIpsNV9uUOclt3JwB4omwFGj4J+pqzsfYZfB/tlx+BPGjCYGNcZ9O9UvtCpLRLgCJmTugL6V/U581gY8mqp+22aVjbEJik+F0j8xTNSxCOV2PLMpNrRSiDZ8FaKtq8ap/HPey5M7qYZQqclfqsEJMXG/KE3PiaTIbO37caFa80FvzfV8MZw1wIDAQAB",
     }
-    if date is None:
-        date = datetime.date.today()
-    else:
-        date = dateparser.parse(date).date()
     url = GRAPHQL_URL.format(date)
     response = cookie.get_with_cookie(url, headers=headers)
     response.raise_for_status()
