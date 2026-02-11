@@ -3,7 +3,8 @@ import contextlib
 import json
 import os
 import sqlite3
-import sys
+
+import click
 
 
 def to_json(aggregated):
@@ -13,9 +14,10 @@ def to_json(aggregated):
     ]
 
 
-def main(argv):
-    db = argv[1]
-    output = argv[2]
+@click.command(context_settings={"show_default": True})
+@click.argument("db", type=click.Path(exists=True))
+@click.argument("output", type=click.File("w"))
+def main(db, output):
     aggregated = {}
 
     with contextlib.closing(sqlite3.connect(db)) as conn:
@@ -27,10 +29,9 @@ def main(argv):
                 aggregated.setdefault(name, {})
                 aggregated[name][date] = time
 
-    with open(output, "w") as f:
-        json.dump(to_json(aggregated), f, indent=2)
-        f.write(os.linesep)
+    json.dump(to_json(aggregated), output, indent=2)
+    output.write(os.linesep)
 
 
 if __name__ == "__main__":
-    main(sys.argv)
+    main()

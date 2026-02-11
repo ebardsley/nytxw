@@ -4,12 +4,13 @@ import sqlite3
 
 import click
 
+import env
 import leaderboards
 import param
 
 
 @click.command(context_settings={"show_default": True})
-@click.argument("file", type=click.Path(), required=True)
+@click.option("-f", "--file", type=click.Path(), default=env.DIR / "data/mini.sqlite3")
 @click.argument("date", type=param.Date(), default=None)
 def main(file, date):
     with contextlib.closing(sqlite3.connect(file)) as conn:
