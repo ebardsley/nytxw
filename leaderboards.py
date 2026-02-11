@@ -172,7 +172,6 @@ def parse_json(contents):
     scores = [
         {
             "name": d.get("name"),
-            "rank": d.get("rank"),
             "time": d.get("score", {}).get("secondsSpentSolving"),
         }
         for d in j.get("data", [])
@@ -189,7 +188,6 @@ def parse_graphql_json(contents):
     scores = [
         {
             "name": e.get("node", {}).get("profile", {}).get("gamesUsername"),
-            "rank": e.get("rank"),
             "time": (
                 e.get("node", {}).get("gameScores", {}).get("crosswordMini") or {}
             ).get("solveTimeSeconds"),
