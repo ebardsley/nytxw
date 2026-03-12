@@ -1,7 +1,6 @@
 #!/usr/bin/env pipenv-shebang
 import collections
 import datetime
-import os
 import pprint
 import sys
 import time
@@ -75,6 +74,7 @@ def first_solved(db):
 
 
 @click.command(context_settings={"show_default": True})
+@click.help_option("-h", "--help")
 @click.option(
     "--db",
     type=param.DB(),
@@ -148,7 +148,7 @@ def main(db, debug, open, start, stats, summary):
             game = f"https://www.nytimes.com/crosswords/game/daily/{last.year}/{last.month:02d}/{last.day:02d}"
             print(game)
             if open:
-                os.system(f"open {game}")
+                click.launch(game)
             break
 
         date = date - dateutil.relativedelta.relativedelta(months=1)

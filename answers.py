@@ -30,6 +30,7 @@ def puzzle_to_string(puzzle):
 
 
 @click.command(context_settings={"show_default": True})
+@click.help_option("-h", "--help")
 @click.option("-m", "--mini", is_flag=True, default=False)
 @click.argument("date", type=param.Date(), default="today")
 def main(date, mini):

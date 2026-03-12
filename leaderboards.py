@@ -100,6 +100,7 @@ def db_filename(db):
 
 
 @click.command(context_settings={"show_default": True})
+@click.help_option("-h", "--help")
 @click.option(
     "--announce/--noannounce", default=False, help="Announce daily scores on discord"
 )

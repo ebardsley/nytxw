@@ -10,6 +10,7 @@ import param
 
 
 @click.command(context_settings={"show_default": True})
+@click.help_option("-h", "--help")
 @click.option("-f", "--db", type=param.DB(), default=env.DIR / "data/mini.sqlite3")
 @click.option("-s", "--start", type=param.Date(), default=None)
 @click.argument("date", type=param.Date(), default=None)

@@ -5,6 +5,7 @@ import param
 
 
 @click.command(context_settings={"show_default": True})
+@click.help_option("-h", "--help")
 @click.argument("db", type=param.DB(exists=False))
 def main(db):
     db.execute(

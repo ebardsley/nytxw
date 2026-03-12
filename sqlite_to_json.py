@@ -15,6 +15,7 @@ def to_json(aggregated):
 
 
 @click.command(context_settings={"show_default": True})
+@click.help_option("-h", "--help")
 @click.argument("db", type=param.DB())
 @click.argument("output", type=click.File("w"))
 def main(db, output):
