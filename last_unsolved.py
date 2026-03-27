@@ -1,4 +1,4 @@
-#!/usr/bin/env pipenv-shebang
+#!/usr/bin/env uv-shebang
 import collections
 import datetime
 import pprint

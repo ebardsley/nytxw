@@ -1,0 +1,25 @@
+[project]
+name = ""
+version = "0.0.1"
+requires-python = ">=3.12, <3.14"
+dependencies = [
+    "requests",
+    "discord.py==1.*",
+    "click",
+    "dateparser",
+    "pytest",
+    "flake8",
+    "pytest-mock",
+    "pip",
+]
+
+[dependency-groups]
+dev = []
+
+[tool.uv]
+package = false
+default-groups = "all"
+
+[[tool.uv.index]]
+name = "pypi"
+url = "https://pypi.org/simple"

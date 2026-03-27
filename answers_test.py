@@ -1,4 +1,4 @@
-# Run with "pipenv run python -m pytest"
+# Run with "uv run python -m pytest"
 import json
 
 import answers

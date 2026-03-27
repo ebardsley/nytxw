@@ -1,0 +1,11 @@
+#!/bin/bash
+
+if [[ -d "$HOME/.cache" ]]; then
+  export PYTHONPYCACHEPREFIX=$HOME/.cache/pycache/
+  if [[ -d $PYTHONPYCACHEPREFIX && -z $(find "$PYTHONPYCACHEPREFIX/last_cleaned" -mtime -30d) ]]; then
+    find "$PYTHONPYCACHEPREFIX" -type f -mtime +30d -delete
+    touch "$PYTHONPYCACHEPREFIX/last_cleaned"
+  fi
+fi
+
+exec uv "$@"

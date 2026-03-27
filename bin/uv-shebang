@@ -1,0 +1,25 @@
+#!/bin/bash
+
+function getPyproject() {
+  DIR="$(dirname "$1")"
+  if [[ $DIR == "/" ]]; then exit; fi
+  TOMLFILE="$DIR/pyproject.toml"
+  if [[ -e "$TOMLFILE" ]]; then
+    echo "$TOMLFILE"
+  else
+    getPyproject "$DIR"
+  fi
+}
+
+SCRIPT="$(realpath "$1")"
+shift
+TOMLFILE=$(getPyproject "$SCRIPT")
+
+if [[ -z "$TOMLFILE" ]]; then
+  echo "Could not locate the pyproject.toml for $SCRIPT."
+  exit 1
+fi
+
+cd "$(dirname "$TOMLFILE")"
+export PATH="$PATH:$PWD/bin"
+exec uv-cache-wrapper run --script "$SCRIPT" "$@"
