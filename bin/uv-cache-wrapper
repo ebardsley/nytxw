@@ -2,8 +2,9 @@
 
 if [[ -d "$HOME/.cache" ]]; then
   export PYTHONPYCACHEPREFIX=$HOME/.cache/pycache/
-  if [[ -d $PYTHONPYCACHEPREFIX && -z $(find "$PYTHONPYCACHEPREFIX/last_cleaned" -mtime -30d) ]]; then
-    find "$PYTHONPYCACHEPREFIX" -type f -mtime +30d -delete
+  # Remove cache files every 30d or so
+  if [[ -d $PYTHONPYCACHEPREFIX && -z $(find "$PYTHONPYCACHEPREFIX/last_cleaned" -mtime -30) ]]; then
+    find "$PYTHONPYCACHEPREFIX" -type f -mtime +30 -delete
     touch "$PYTHONPYCACHEPREFIX/last_cleaned"
   fi
 fi
