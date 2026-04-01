@@ -1,9 +1,9 @@
 #!/bin/bash
 
 if [[ -d "$HOME/.cache" ]]; then
-  export PYTHONPYCACHEPREFIX=$HOME/.cache/pycache/
+  export PYTHONPYCACHEPREFIX=$HOME/.cache/pycache
   # Remove cache files every 30d or so
-  if [[ -d $PYTHONPYCACHEPREFIX && -z $(find "$PYTHONPYCACHEPREFIX/last_cleaned" -mtime -30) ]]; then
+  if [[ -d $PYTHONPYCACHEPREFIX && -z $(find "$PYTHONPYCACHEPREFIX/last_cleaned" -mtime -30 2>/dev/null) ]]; then
     find "$PYTHONPYCACHEPREFIX" -type f -mtime +30 -delete
     touch "$PYTHONPYCACHEPREFIX/last_cleaned"
   fi
